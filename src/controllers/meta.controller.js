@@ -297,7 +297,7 @@ exports.verifyWebhook = (req, res) => {
 };
 
 
-exports.sendMessengerMessage = async (recipientId, message, pageId) => {
+exports.sendMessengerMessage = async (recipientId, msg, pageId) => {
   const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
 
   console.log(`recipientId: ${recipientId}, message: ${message}, pageId: ${pageId}`);
@@ -311,7 +311,7 @@ exports.sendMessengerMessage = async (recipientId, message, pageId) => {
       `https://graph.facebook.com/v20.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
       {
         recipient: { id: recipientId },
-        message,
+        message: { text: msg },
       }
     );
     console.log('Mensaje enviado:', response);
