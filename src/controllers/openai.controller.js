@@ -20,6 +20,7 @@ const createAndRun = async (msg, assistantId) => {
         });
         return { threadId: run.thread_id, runId: run.id };
     } catch (error) {
+        console.log(error)
         throw new OpenAIError("Error al crear y ejecutar el hilo.");
     }
 };
