@@ -259,6 +259,7 @@ async function processMessengerMessage(messaging, fanpageId) {
       let response = await sendMessage(message.text, conversation.ai_thread_id);
 
       if (response.newThread) {
+        console.log('Creando nuevo hilo de OpenAI:', response.newThread);
         conversation.ai_thread_id = response.newThread;
         await conversation.save();
       }

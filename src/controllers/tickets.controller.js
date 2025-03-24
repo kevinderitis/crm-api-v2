@@ -2,6 +2,7 @@ const Ticket = require('../models/ticket.model');
 const Conversation = require('../models/conversation.model');
 const Message = require('../models/message.model');
 const { sendMessengerMessage } = require('./meta.controller');
+const { sendMessage } = require('./openai.controller');
 
 exports.getTickets = async (req, res) => {
   try {
@@ -46,7 +47,7 @@ exports.completeTicket = async (req, res) => {
 
     const conversation = await Conversation.findById(ticket.conversation);
 
-    const [user, password] = ticket.description.split(" - "); 
+    const [user, password] = ticket.description.split(" - ");
 
     const message = `
 Ya tenés creada tu cuenta. Estas son tus credenciales de acceso:
@@ -70,6 +71,12 @@ Ya tenés creada tu cuenta. Estas son tus credenciales de acceso:
     });
 
     await newMessage.save();
+
+    if (conversation.ai_thread_id) {
+      let msg = { event: 'usercreated', params: { user, password } };
+      await sendMessage(JSON.stringify(msg), conversation.ai_thread_id);
+    }
+
 
     res.json(ticket);
   } catch (error) {
