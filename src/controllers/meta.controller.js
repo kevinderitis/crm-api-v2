@@ -267,7 +267,7 @@ async function getMessengerProfile(userId) {
   // if (!config) throw new Error('Meta configuration not found');
 
   const response = await fetch(
-    `https://graph.facebook.com/v18.0/${userId}?fields=name,profile_pic&access_token=${config.accessToken}`
+    `https://graph.facebook.com/v18.0/${userId}?fields=name,profile_pic&access_token=${config.FACEBOOK_ACCESS_TOKEN}`
   );
 
   if (!response.ok) {
@@ -297,7 +297,6 @@ exports.verifyWebhook = (req, res) => {
 
 
 exports.sendMessengerMessage = async (recipientId, message, pageId) => {
-  console.log(`PAGE ID = ${pageId}`);
   const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
 
   if (!PAGE_ACCESS_TOKEN) {
