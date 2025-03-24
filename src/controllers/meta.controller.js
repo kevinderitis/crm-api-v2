@@ -4,6 +4,7 @@ const Message = require('../models/message.model');
 const Payment = require('../models/payment.model');
 const Ticket = require('../models/ticket.model');
 const config = require('../config/config');
+const axios = require('axios');
 const { broadcastPaymentsToAll, broadcastToAll, broadcastTicketsToAll } = require('../websocket/socket');
 const { sendMessage } = require('./openai.controller');
 
