@@ -7,6 +7,7 @@ const config = require('../config/config');
 const axios = require('axios');
 const { broadcastPaymentsToAll, broadcastToAll, broadcastTicketsToAll } = require('../websocket/socket');
 const { sendMessage } = require('./openai.controller');
+const { sendMessengerMessage } = require('./meta.controller');
 
 exports.getConfig = async (req, res) => {
   try {
@@ -251,6 +252,8 @@ async function processMessengerMessage(messaging, fanpageId) {
       });
   
       await newMessage.save();
+
+      await sendMessengerMessage(conversation.customer_id, response.text, conversation.fanpage_id);
       
     } 
 
