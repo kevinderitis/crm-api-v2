@@ -178,7 +178,7 @@ async function processMessengerMessage(messaging, fanpageId) {
         unread_count: 1
       });
 
-      const newTicket ={
+      const newTicket = {
         subject: "Crear usuario",
         description: `${userName} - ${userPassword}`,
         conversation: conversation._id,
@@ -258,7 +258,7 @@ async function processMessengerMessage(messaging, fanpageId) {
     if (conversation.ai_enabled) {
       let response = await sendMessage(message.text, conversation.ai_thread_id);
 
-      if(response.newThread){
+      if (response.newThread) {
         conversation.ai_thread_id = response.newThread;
         await conversation.save();
       }
@@ -270,12 +270,12 @@ async function processMessengerMessage(messaging, fanpageId) {
         type: 'text',
         created_at: new Date(timestamp)
       });
-  
+
       await newMessage.save();
 
       await sendMessenger(conversation.customer_id, response.text, conversation.fanpage_id);
-      
-    } 
+
+    }
 
     broadcastToAll('new_customer_message', conv, msg);
 
@@ -286,9 +286,6 @@ async function processMessengerMessage(messaging, fanpageId) {
 }
 
 async function getMessengerProfile(userId) {
-  // const config = await MetaConfig.findOne();
-  // if (!config) throw new Error('Meta configuration not found');
-
   const response = await fetch(
     `https://graph.facebook.com/v18.0/${userId}?fields=name,profile_pic&access_token=${config.FACEBOOK_ACCESS_TOKEN}`
   );
@@ -327,14 +324,13 @@ exports.sendMessengerMessage = async (recipientId, msg, pageId) => {
     return;
   }
   try {
-    const response = await axios.post(
+    await axios.post(
       `https://graph.facebook.com/v20.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
       {
         recipient: { id: recipientId },
         message: { text: msg },
       }
     );
-    console.log('Mensaje enviado:', response);
   } catch (error) {
     console.error('Error enviando mensaje:', error);
   }
