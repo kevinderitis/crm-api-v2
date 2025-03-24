@@ -26,9 +26,7 @@ connectDB();
 //     'http://localhost:3000'
 // ];
 
-const allowedOrigins = [
-    '*'
-];
+const allowedOrigins = '*';
 
 // Middleware
 app.use(cors({
