@@ -255,7 +255,7 @@ async function processMessengerMessage(messaging, fanpageId) {
       created_at: newMessage.created_at
     };
 
-    if (conversation.ai_enabled) {
+    if (conversation.ai_enabled && !message.attachments) {
       let response = await sendMessage(message.text, conversation.ai_thread_id);
 
       if (response.newThread) {
