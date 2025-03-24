@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const http = require('http');
+const https = require('https');
 const connectDB = require('./config/db');
 const { setupWebSocket, broadcastToAll, broadcastPaymentsToAll, broadcastTicketsToAll } = require('./websocket/socket');
 const config = require('./config/config');
@@ -46,7 +46,7 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 
 // Crear servidor HTTP
-const server = http.createServer(app);
+const server = https.createServer(app);
 
 // Configurar WebSocket
 setupWebSocket(server);
