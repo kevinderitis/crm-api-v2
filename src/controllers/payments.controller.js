@@ -1,4 +1,7 @@
 const Payment = require('../models/payment.model');
+const Conversation = require('../models/conversation.model');
+const { sendMessengerMessage } = require('./meta.controller');
+const { sendMessage } = require('./openai.controller');
 
 exports.getPayments = async (req, res) => {
   try {
@@ -54,6 +57,20 @@ exports.approvePayment = async (req, res) => {
 
     payment.status = 'approved';
     await payment.save();
+
+    let conversation = await Conversation.findOne({ customer_name: payment.customerName });
+
+    if (conversation) {
+      const message = `Ya tenés cargadas tus fichas! Cualquier cosa me avisas`;
+      let openAIMessage = { event: 'coinsadded' };
+
+      await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+
+      if (conversation.ai_thread_id) {
+        await sendMessage(JSON.stringify(openAIMessage), conversation.ai_thread_id);
+      }
+
+    }
 
     res.json(payment);
   } catch (error) {
