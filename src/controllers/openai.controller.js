@@ -110,6 +110,7 @@ const sendMessage = async (msg, threadId = null) => {
         const text = await listMessages(threadId);
         return { text, newThread };
     } catch (error) {
+        console.log(error)
         throw new OpenAIError("Error al enviar el mensaje.");
     }
 };
