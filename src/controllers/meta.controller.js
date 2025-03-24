@@ -234,9 +234,8 @@ async function processMessengerMessage(messaging, fanpageId) {
       created_at: newMessage.created_at
     };
 
-    if (!conversation.ai_enabled) {
-      console.log('Enviar mensaje a AI');
-      let response = await sendMessage(conversation.ai_thread_id, message.text);
+    if (conversation.ai_enabled) {
+      let response = await sendMessage(message.text, conversation.ai_thread_id);
 
       if(response.newThread){
         conversation.ai_thread_id = response.newThread;
