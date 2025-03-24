@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const http = require('https');
+const http = require('http');
 const connectDB = require('./config/db');
 const { setupWebSocket, broadcastToAll, broadcastPaymentsToAll, broadcastTicketsToAll } = require('./websocket/socket');
 const config = require('./config/config');
