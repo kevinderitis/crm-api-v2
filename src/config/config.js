@@ -11,4 +11,5 @@ module.exports = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   FACEBOOK_ACCESS_TOKEN: process.env.FACEBOOK_ACCESS_TOKEN,
   OPEN_AI_API_KEY: process.env.OPEN_AI_API_KEY,
+  ASSISTANT_ID: process.env.ASSISTANT_ID,
 };
