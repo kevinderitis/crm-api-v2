@@ -298,7 +298,7 @@ exports.verifyWebhook = (req, res) => {
 
 exports.sendMessengerMessage = async (recipientId, message, pageId) => {
   const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
-
+  console.log(PAGE_ACCESS_TOKEN)
   if (!PAGE_ACCESS_TOKEN) {
     console.error(`No se encontró el token de acceso para la página ${pageId}`);
     return;
