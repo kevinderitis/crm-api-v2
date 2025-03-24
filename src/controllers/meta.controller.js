@@ -311,8 +311,8 @@ exports.sendMessengerMessage = async (recipientId, message, pageId) => {
         message,
       }
     );
-    console.log('Mensaje enviado:', response.data);
+    console.log('Mensaje enviado:', response);
   } catch (error) {
-    console.error('Error enviando mensaje:', error.response.data);
+    console.error('Error enviando mensaje:', error);
   }
 };
