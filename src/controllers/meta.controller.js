@@ -7,7 +7,6 @@ const config = require('../config/config');
 const axios = require('axios');
 const { broadcastPaymentsToAll, broadcastToAll, broadcastTicketsToAll } = require('../websocket/socket');
 const { sendMessage } = require('./openai.controller');
-const { sendMessengerMessage } = require('./meta.controller');
 
 exports.getConfig = async (req, res) => {
   try {
@@ -132,6 +131,27 @@ function generateEasyPassword() {
   return `${word1}${word2}${number}`;
 }
 
+const sendMessenger = async (recipientId, msg, pageId) => {
+  const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
+  console.log('Enviando mensaje a', recipientId, 'desde la página', msg);
+  if (!PAGE_ACCESS_TOKEN) {
+    console.error(`No se encontró el token de acceso para la página ${pageId}`);
+    return;
+  }
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v20.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
+      {
+        recipient: { id: recipientId },
+        message: { text: msg },
+      }
+    );
+    console.log('Mensaje enviado:', response);
+  } catch (error) {
+    console.error('Error enviando mensaje:', error);
+  }
+};
+
 async function processMessengerMessage(messaging, fanpageId) {
   const { sender, message } = messaging;
   const timestamp = new Date();
@@ -253,7 +273,7 @@ async function processMessengerMessage(messaging, fanpageId) {
   
       await newMessage.save();
 
-      await sendMessengerMessage(conversation.customer_id, response.text, conversation.fanpage_id);
+      await sendMessenger(conversation.customer_id, response.text, conversation.fanpage_id);
       
     } 
 
@@ -301,7 +321,7 @@ exports.verifyWebhook = (req, res) => {
 
 exports.sendMessengerMessage = async (recipientId, msg, pageId) => {
   const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
-  console.log('Enviando mensaje a', recipientId, 'desde la página', msg);
+
   if (!PAGE_ACCESS_TOKEN) {
     console.error(`No se encontró el token de acceso para la página ${pageId}`);
     return;
