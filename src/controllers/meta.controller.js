@@ -215,7 +215,8 @@ async function processMessengerMessage(messaging, fanpageId) {
             const payment = new Payment(newPayment);
 
             await payment.save();
-            broadcastPaymentsToAll("new_payment", newPayment);
+
+            broadcastPaymentsToAll("new_payment", payment);
           }
         }
       }
