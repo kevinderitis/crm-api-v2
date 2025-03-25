@@ -72,7 +72,7 @@ exports.approvePayment = async (req, res) => {
         sender_id: 'AI',
         content: message,
         type: 'text',
-        created_at: new Date(timestamp)
+        created_at: new Date().toISOString()
       });
 
       await newMessage.save();
