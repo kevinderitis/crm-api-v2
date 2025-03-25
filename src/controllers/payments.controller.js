@@ -1,5 +1,6 @@
 const Payment = require('../models/payment.model');
 const Conversation = require('../models/conversation.model');
+const Message = require('../models/message.model');
 const { sendMessengerMessage } = require('./meta.controller');
 const { sendMessage } = require('./openai.controller');
 
@@ -65,6 +66,16 @@ exports.approvePayment = async (req, res) => {
       let openAIMessage = { event: 'coinsadded' };
 
       await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+
+      const newMessage = new Message({
+        conversation_id: conversation._id,
+        sender_id: 'AI',
+        content: message,
+        type: 'text',
+        created_at: new Date(timestamp)
+      });
+
+      await newMessage.save();
 
       if (conversation.ai_thread_id) {
         await sendMessage(JSON.stringify(openAIMessage), conversation.ai_thread_id);
