@@ -81,8 +81,11 @@ const runThread = async (threadId, assistantId) => {
 const processFunctionCalls = async (toolCalls) => {
     const outputs = [];
 
+    console.log('toolCalls entry: ', toolCalls)
+
     for (const call of toolCalls) {
         try {
+            console.log(call.function.name);
             const func = functions[call.function.name];
             if (!func) throw new Error(`Función ${call.function.name} no existe`);
 
@@ -109,7 +112,7 @@ const waitForRunCompletion = async (threadId, runId) => {
     let attempts = 10;
     while (attempts-- > 0) {
         const run = await openai.beta.threads.runs.retrieve(threadId, runId);
-
+        console.log('run status: ', run.status)
         switch (run.status) {
             case "completed":
                 return true;
