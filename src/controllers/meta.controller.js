@@ -12,6 +12,7 @@ const { sendMessage } = require('./openai.controller');
 const customerBatches = new Map();
 const processingQueues = new Map();
 
+// Controladores principales
 exports.getConfig = async (req, res) => {
   try {
     const config = await MetaConfig.findOne();
@@ -86,26 +87,7 @@ exports.verifyWebhook = (req, res) => {
   }
 };
 
-exports.sendMessengerMessage = async (recipientId, msg, pageId) => {
-  const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
-
-  if (!PAGE_ACCESS_TOKEN) {
-    console.error(`No se encontró el token de acceso para la página ${pageId}`);
-    return;
-  }
-  try {
-    await axios.post(
-      `https://graph.facebook.com/v20.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
-      {
-        recipient: { id: recipientId },
-        message: { text: msg },
-      }
-    );
-  } catch (error) {
-    console.error('Error enviando mensaje:', error);
-  }
-};
-
+// Sistema de colas y procesamiento de mensajes
 async function processMessengerMessage(messaging, fanpageId) {
   const customerId = messaging.sender.id;
 
@@ -146,108 +128,24 @@ async function processCustomerQueue(customerId) {
 
   while (queue.length > 0) {
     const batchMessages = queue.shift();
-    for (const messageData of batchMessages) {
-      await processSingleMessage(messageData.messaging, messageData.fanpageId);
-    }
+    await processSingleMessageBatch(batchMessages);
   }
 
   queue.processing = false;
   processingQueues.delete(customerId);
 }
 
-async function processSingleMessage(messaging, fanpageId) {
-  const { sender, message } = messaging;
-  const timestamp = new Date();
-
+// Procesamiento de batches
+async function processSingleMessageBatch(messageBatch) {
   try {
-    let conversation = await Conversation.findOne({ customer_id: sender.id });
-    let imageUrl;
+    const customerId = messageBatch[0].messaging.sender.id;
+    const fanpageId = messageBatch[0].fanpageId;
 
-    if (!conversation) {
-      const profileInfo = await getMessengerProfile(sender.id);
-      let userName = generateUsername(profileInfo?.name || "");
-      let userPassword = generateEasyPassword();
+    const { conversation, messagesContent } = await processBatchMessages(messageBatch);
 
-      conversation = new Conversation({
-        customer_id: sender.id,
-        customer_name: userName,
-        customer_password: userPassword,
-        fanpage_id: fanpageId,
-        profile_picture: profileInfo ? profileInfo.profile_pic : '',
-        last_message: message.text,
-        last_message_at: timestamp,
-        unread_count: 1
-      });
-
-      const newTicket = new Ticket({
-        subject: "Crear usuario",
-        description: `${userName} - ${userPassword}`,
-        conversation: conversation._id,
-        date: new Date(),
-        status: "open"
-      });
-
-      await newTicket.save();
-      broadcastTicketsToAll("new_ticket", newTicket);
-    } else {
-      conversation.last_message = message.text;
-      conversation.last_message_at = timestamp;
-      conversation.unread_count += 1;
-
-      if (message.attachments) {
-        for (const attachment of message.attachments) {
-          if (attachment.type === 'image') {
-            imageUrl = attachment.payload.url;
-            const newPayment = new Payment({
-              customerName: conversation.customer_name,
-              date: timestamp,
-              image: imageUrl,
-              status: 'pending'
-            });
-            await newPayment.save();
-            broadcastPaymentsToAll("new_payment", newPayment);
-          }
-        }
-      }
-    }
-
-    await conversation.save();
-
-    const newMessage = new Message({
-      conversation_id: conversation._id,
-      sender_id: sender.id,
-      content: message.text || imageUrl,
-      type: message.attachments?.length > 0 ? 'image' : 'text',
-      created_at: timestamp
-    });
-
-    await newMessage.save();
-
-    const convData = {
-      id: conversation._id,
-      customer_id: conversation.customer_id,
-      customer_name: conversation.customer_name,
-      last_message: conversation.last_message,
-      last_message_at: conversation.last_message_at,
-      unread_count: conversation.unread_count,
-      profile_picture: conversation.profile_picture,
-      tags: conversation.tags,
-      assigned_to: conversation.assigned_to
-    };
-
-    const msgData = {
-      id: newMessage._id,
-      conversation_id: newMessage.conversation_id,
-      sender_id: newMessage.sender_id,
-      content: newMessage.content,
-      type: newMessage.type,
-      created_at: newMessage.created_at
-    };
-
-    broadcastToAll('new_customer_message', convData, msgData);
-
-    if (conversation.ai_enabled && !message.attachments) {
-      const response = await sendMessage(message.text, conversation.ai_thread_id);
+    if (conversation.ai_enabled && messagesContent.length > 0) {
+      const combinedMessage = messagesContent.join('\n');
+      const response = await sendMessage(combinedMessage, conversation.ai_thread_id);
 
       if (response.newThread) {
         conversation.ai_thread_id = response.newThread;
@@ -265,12 +163,125 @@ async function processSingleMessage(messaging, fanpageId) {
       await aiMessage.save();
       await sendMessenger(conversation.customer_id, response.text, conversation.fanpage_id);
     }
-
   } catch (error) {
-    console.error('Error procesando mensaje:', error);
+    console.error('Error procesando batch:', error);
   }
 }
 
+async function processBatchMessages(messageBatch) {
+  let conversation;
+  const messagesContent = [];
+  const timestamp = new Date();
+
+  for (const { messaging, fanpageId } of messageBatch) {
+    const { sender, message } = messaging;
+
+    // Buscar o crear conversación
+    conversation = await Conversation.findOne({ customer_id: sender.id }) ||
+      await createNewConversation(sender, fanpageId);
+
+    // Actualizar conversación
+    conversation.last_message = message.text;
+    conversation.last_message_at = timestamp;
+    conversation.unread_count += 1;
+
+    // Procesar adjuntos
+    if (message.attachments) {
+      await processAttachments(message.attachments, conversation);
+    }
+
+    // Guardar mensaje
+    const newMessage = new Message({
+      conversation_id: conversation._id,
+      sender_id: sender.id,
+      content: message.text,
+      type: message.attachments?.length > 0 ? 'image' : 'text',
+      created_at: timestamp
+    });
+
+    await newMessage.save();
+    messagesContent.push(message.text);
+
+    // Notificar por WebSocket
+    broadcastToAll('new_customer_message', formatConversation(conversation), formatMessage(newMessage));
+  }
+
+  await conversation.save();
+  return { conversation, messagesContent };
+}
+
+// Funciones auxiliares
+async function createNewConversation(sender, fanpageId) {
+  const profileInfo = await getMessengerProfile(sender.id);
+  const userName = generateUsername(profileInfo?.name || "");
+  const userPassword = generateEasyPassword();
+
+  const newConversation = new Conversation({
+    customer_id: sender.id,
+    customer_name: userName,
+    customer_password: userPassword,
+    fanpage_id: fanpageId,
+    profile_picture: profileInfo?.profile_pic || '',
+    last_message: '',
+    last_message_at: new Date(),
+    unread_count: 0
+  });
+
+  const newTicket = new Ticket({
+    subject: "Crear usuario",
+    description: `${userName} - ${userPassword}`,
+    conversation: newConversation._id,
+    date: new Date(),
+    status: "open"
+  });
+
+  await newTicket.save();
+  broadcastTicketsToAll("new_ticket", newTicket);
+  return newConversation.save();
+}
+
+async function processAttachments(attachments, conversation) {
+  for (const attachment of attachments) {
+    if (attachment.type === 'image') {
+      const newPayment = new Payment({
+        customerName: conversation.customer_name,
+        date: new Date(),
+        image: attachment.payload.url,
+        status: 'pending'
+      });
+      await newPayment.save();
+      broadcastPaymentsToAll("new_payment", newPayment);
+    }
+  }
+}
+
+// Funciones de formato
+function formatConversation(conversation) {
+  return {
+    id: conversation._id,
+    customer_id: conversation.customer_id,
+    customer_name: conversation.customer_name,
+    last_message: conversation.last_message,
+    last_message_at: conversation.last_message_at,
+    unread_count: conversation.unread_count,
+    profile_picture: conversation.profile_picture,
+    tags: conversation.tags,
+    assigned_to: conversation.assigned_to
+  };
+}
+
+function formatMessage(message) {
+  return {
+    id: message._id,
+    conversation_id: message.conversation_id,
+    sender_id: message.sender_id,
+    content: message.content,
+    type: message.type,
+    created_at: message.created_at
+  };
+}
+
+// Funciones de utilidad
 function generateUsername(name) {
   const randomWords = [
     "victory", "fortuna", "jackpot", "luck", "winner", "prosper",
@@ -302,6 +313,7 @@ function generateEasyPassword() {
   return `${word1}${word2}${number}`;
 }
 
+// Comunicación con Meta
 async function sendMessenger(recipientId, msg, pageId) {
   const PAGE_ACCESS_TOKEN = config.FACEBOOK_ACCESS_TOKEN;
   if (!PAGE_ACCESS_TOKEN) {
@@ -317,7 +329,7 @@ async function sendMessenger(recipientId, msg, pageId) {
       }
     );
   } catch (error) {
-    console.error('Error enviando mensaje:', error);
+    console.error('Error enviando mensaje:', error.response?.data || error.message);
   }
 }
 
@@ -328,7 +340,9 @@ async function getMessengerProfile(userId) {
     );
     return response.data;
   } catch (error) {
-    console.error('Error obteniendo perfil de Messenger:', error);
+    console.error('Error obteniendo perfil:', error.response?.data || error.message);
     return null;
   }
 }
+
+exports.sendMessengerMessage = sendMessenger;
