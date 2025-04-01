@@ -13,7 +13,6 @@ class OpenAIError extends Error {
 const functions = {
     crearTicketSoporte: (params) => {
         console.log("✅ Creando ticket con:", params);
-        // Lógica para crear el ticket (ej. BD, API, etc.)
         return {
             success: true,
             ticketId: Math.floor(Math.random() * 1000),
@@ -79,61 +78,59 @@ const runThread = async (threadId, assistantId) => {
 
 
 const processFunctionCalls = async (toolCalls) => {
-    const outputs = [];
-
-    console.log('toolCalls entry: ', toolCalls)
-
-    for (const call of toolCalls) {
+    return Promise.all(toolCalls.map(async (call) => {
         try {
-            console.log(call.function.name);
-            const func = functions[call.function.name];
-            if (!func) throw new Error(`Función ${call.function.name} no existe`);
+            const result = await functions[call.function.name](JSON.parse(call.function.arguments));
 
-            const args = JSON.parse(call.function.arguments);
-            const result = await func(args);
-
-            outputs.push({
+            // Formato requerido por OpenAI:
+            return {
                 tool_call_id: call.id,
-                output: JSON.stringify(result)
-            });
+                output: JSON.stringify(result), // 👈 Debe ser un string JSON
+            };
 
         } catch (error) {
-            console.error("Error procesando función:", error);
-            outputs.push({
+            return {
                 tool_call_id: call.id,
-                output: JSON.stringify({ error: error.message })
-            });
+                output: JSON.stringify({ error: "Fallo en la función" }),
+            };
         }
-    }
-    return outputs;
+    }));
 };
 
 const waitForRunCompletion = async (threadId, runId) => {
-    let attempts = 10;
+    let attempts = 20; // 👈 Aumenta los intentos
     while (attempts-- > 0) {
-        const run = await openai.beta.threads.runs.retrieve(threadId, runId);
-        console.log('run status: ', run.status)
-        switch (run.status) {
-            case "completed":
-                return true;
+        try {
+            const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+            console.log(`Run status: ${run.status}`); // 👈 Para debug
 
-            case "requires_action":
-                const toolOutputs = await processFunctionCalls(run.required_action.submit_tool_outputs.tool_calls);
-                await openai.beta.threads.runs.submitToolOutputs(
-                    threadId,
-                    runId,
-                    { tool_outputs: toolOutputs }
-                );
-                break;
+            switch (run.status) {
+                case "completed":
+                    return true;
 
-            case "failed":
-                throw new OpenAIError("Ejecución fallida");
+                case "requires_action":
+                    // Procesar y enviar resultados de la función
+                    const toolOutputs = await processFunctionCalls(run.required_action.submit_tool_outputs.tool_calls);
+                    await openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
+                        tool_outputs: toolOutputs,
+                    });
+                    attempts += 2; // 👈 Da más tiempo después de enviar outputs
+                    break;
 
-            default:
-                await sleep(2000);
+                case "failed":
+                    throw new OpenAIError(`Error de OpenAI: ${run.last_error?.message}`);
+
+                case "cancelled":
+                    throw new OpenAIError("Ejecución cancelada");
+
+                default:
+                    await sleep(2500); // 👈 Reduce el tiempo de espera
+            }
+        } catch (error) {
+            throw new OpenAIError(`Error en ejecución: ${error.message}`);
         }
     }
-    throw new OpenAIError("Tiempo de espera agotado");
+    throw new OpenAIError("Tiempo de espera agotado después de 20 intentos");
 };
 
 
