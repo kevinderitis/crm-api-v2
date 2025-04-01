@@ -11,7 +11,7 @@ class OpenAIError extends Error {
 }
 
 const functions = {
-    crearTicket: (params) => {
+    crearTicketSoporte: (params) => {
         console.log("✅ Creando ticket con:", params);
         // Lógica para crear el ticket (ej. BD, API, etc.)
         return {
