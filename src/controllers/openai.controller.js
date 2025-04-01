@@ -1,5 +1,6 @@
 const OpenAI = require("openai");
 const config = require("../config/config.js");
+const { createAndSendTicket } = require("../utils/ticketFunctions");
 
 const openai = new OpenAI({ apiKey: config.OPEN_AI_API_KEY });
 
@@ -11,12 +12,19 @@ class OpenAIError extends Error {
 }
 
 const functions = {
-    crearTicketSoporte: (params) => {
+    crearTicketSoporte: async (params, threadId) => {
         console.log("✅ Creando ticket con:", params);
+        await createAndSendTicket(threadId, 'Soporte', params.problem);
+        return {
+            success: true
+        };
+    },
+    retirarDinero: async (params, threadId) => {
+        console.log("✅ Retirando dinero con:", params);
+        await createAndSendTicket(threadId, 'Retiro', params.monto);
         return {
             success: true,
-            ticketId: Math.floor(Math.random() * 1000),
-            message: "Ticket creado exitosamente"
+            status: "pending"
         };
     }
 };
@@ -77,15 +85,15 @@ const runThread = async (threadId, assistantId) => {
 
 
 
-const processFunctionCalls = async (toolCalls) => {
+const processFunctionCalls = async (toolCalls, threadId) => {
     return Promise.all(toolCalls.map(async (call) => {
         try {
-            const result = await functions[call.function.name](JSON.parse(call.function.arguments));
+            const result = await functions[call.function.name](JSON.parse(call.function.arguments), threadId);
 
             // Formato requerido por OpenAI:
             return {
                 tool_call_id: call.id,
-                output: JSON.stringify(result), // 👈 Debe ser un string JSON
+                output: JSON.stringify(result),
             };
 
         } catch (error) {
@@ -110,7 +118,7 @@ const waitForRunCompletion = async (threadId, runId) => {
 
                 case "requires_action":
                     // Procesar y enviar resultados de la función
-                    const toolOutputs = await processFunctionCalls(run.required_action.submit_tool_outputs.tool_calls);
+                    const toolOutputs = await processFunctionCalls(run.required_action.submit_tool_outputs.tool_calls, threadId);
                     await openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
                         tool_outputs: toolOutputs,
                     });
