@@ -44,8 +44,8 @@ const listMessages = async (threadId) => {
                 if (message.content[0]?.type === "text") {
                     return message.content[0].text.value;
                 }
-                if (message.content[0]?.type === "function_call") {
-                    logFunctionCall(message.content[0].function_call);
+                if (message.content[0]?.type === "tool_calls") {
+                    console.log('tool_calls', message.content[0].tool_calls)
                 }
             }
         }
@@ -64,33 +64,80 @@ const runThread = async (threadId, assistantId) => {
     }
 };
 
-const waitForRunCompletion = async (threadId, runId) => {
-    try {
-        let attempts = 10;
-        while (attempts > 0) {
-            const run = await openai.beta.threads.runs.retrieve(threadId, runId);
-            if (run.status === "completed") {
-                return true;
-            } else if (run.status === "failed" || run.status === "cancelled") {
-                throw new OpenAIError("La ejecución del asistente falló o fue cancelada.");
-            }
-            await sleep(2000);
-            attempts--;
+// const waitForRunCompletion = async (threadId, runId) => {
+//     try {
+//         let attempts = 10;
+//         while (attempts > 0) {
+//             const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+//             if (run.status === "completed") {
+//                 return true;
+//             } else if (run.status === "failed" || run.status === "cancelled") {
+//                 throw new OpenAIError("La ejecución del asistente falló o fue cancelada.");
+//             }
+//             await sleep(2000);
+//             attempts--;
+//         }
+//         throw new OpenAIError("Tiempo de espera agotado para la ejecución del asistente.");
+//     } catch (error) {
+//         throw new OpenAIError("Error al esperar la finalización del hilo.");
+//     }
+// };
+
+const processFunctionCalls = async (toolCalls) => {
+    const outputs = [];
+
+    for (const call of toolCalls) {
+        try {
+            const func = functions[call.function.name];
+            if (!func) throw new Error(`Función ${call.function.name} no existe`);
+
+            const args = JSON.parse(call.function.arguments);
+            const result = await func(args);
+
+            outputs.push({
+                tool_call_id: call.id,
+                output: JSON.stringify(result)
+            });
+
+        } catch (error) {
+            console.error("Error procesando función:", error);
+            outputs.push({
+                tool_call_id: call.id,
+                output: JSON.stringify({ error: error.message })
+            });
         }
-        throw new OpenAIError("Tiempo de espera agotado para la ejecución del asistente.");
-    } catch (error) {
-        throw new OpenAIError("Error al esperar la finalización del hilo.");
     }
+    return outputs;
 };
 
-const logFunctionCall = (functionCall) => {
-    try {
-        console.log(`🔹 Se recibió una llamada a la función: ${functionCall.name}`);
-        console.log("📌 Parámetros:", JSON.parse(functionCall.arguments));
-    } catch (error) {
-        console.error("❌ Error al procesar la llamada a la función:", error);
+const waitForRunCompletion = async (threadId, runId) => {
+    let attempts = 10;
+    while (attempts-- > 0) {
+        const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+
+        switch (run.status) {
+            case "completed":
+                return true;
+
+            case "requires_action":
+                const toolOutputs = await processFunctionCalls(run.required_action.submit_tool_outputs.tool_calls);
+                await openai.beta.threads.runs.submitToolOutputs(
+                    threadId,
+                    runId,
+                    { tool_outputs: toolOutputs }
+                );
+                break;
+
+            case "failed":
+                throw new OpenAIError("Ejecución fallida");
+
+            default:
+                await sleep(2000);
+        }
     }
+    throw new OpenAIError("Tiempo de espera agotado");
 };
+
 
 const sendMessage = async (msg, threadId = null) => {
     try {
