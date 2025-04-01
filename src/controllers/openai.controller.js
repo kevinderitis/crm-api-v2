@@ -10,6 +10,18 @@ class OpenAIError extends Error {
     }
 }
 
+const functions = {
+    crearTicket: (params) => {
+        console.log("✅ Creando ticket con:", params);
+        // Lógica para crear el ticket (ej. BD, API, etc.)
+        return {
+            success: true,
+            ticketId: Math.floor(Math.random() * 1000),
+            message: "Ticket creado exitosamente"
+        };
+    }
+};
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const createAndRun = async (msg, assistantId) => {
@@ -64,24 +76,7 @@ const runThread = async (threadId, assistantId) => {
     }
 };
 
-// const waitForRunCompletion = async (threadId, runId) => {
-//     try {
-//         let attempts = 10;
-//         while (attempts > 0) {
-//             const run = await openai.beta.threads.runs.retrieve(threadId, runId);
-//             if (run.status === "completed") {
-//                 return true;
-//             } else if (run.status === "failed" || run.status === "cancelled") {
-//                 throw new OpenAIError("La ejecución del asistente falló o fue cancelada.");
-//             }
-//             await sleep(2000);
-//             attempts--;
-//         }
-//         throw new OpenAIError("Tiempo de espera agotado para la ejecución del asistente.");
-//     } catch (error) {
-//         throw new OpenAIError("Error al esperar la finalización del hilo.");
-//     }
-// };
+
 
 const processFunctionCalls = async (toolCalls) => {
     const outputs = [];
