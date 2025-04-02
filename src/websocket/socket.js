@@ -27,20 +27,40 @@ const setupWebSocket = (server) => {
 
     console.log('Cliente conectado:', ws._socket.remoteAddress);
 
-    // Unirse a sala personal basada en el rol del usuario
-    if (ws.user.role === 'agent') {
-      ws.room = 'agents';  // Asignamos la sala de agentes
-    }
+    // Set up ping interval
+    ws.isAlive = true;
+    ws.pingInterval = setInterval(() => {
+      if (!ws.isAlive) {
+        clearInterval(ws.pingInterval);
+        return ws.terminate();
+      }
+      ws.isAlive = false;
+      ws.ping();
+    }, 30000); // Send ping every 30 seconds
 
-    // Manejar nuevo mensaje del cliente
+    // Handle pong responses
+    ws.on('pong', () => {
+      ws.isAlive = true;
+    });
+
+    // Handle custom ping messages
     ws.on('message', async (data) => {
       try {
-        const messageData = JSON.parse(data);
-        const { customer_id, customer_name, profile_picture, content, type } = messageData;
+        const message = JSON.parse(data);
+
+        // Handle ping type messages
+        if (message.type === 'ping') {
+          console.log('pong')
+          ws.send(JSON.stringify({ type: 'pong' }));
+          return;
+        }
+
+        // Handle other message types...
+        const { customer_id, customer_name, profile_picture, content, type } = message;
 
         // Buscar o crear conversación
         let conversation = await Conversation.findOne({ customer_id });
-        
+
         if (!conversation) {
           conversation = new Conversation({
             customer_id,
@@ -59,13 +79,13 @@ const setupWebSocket = (server) => {
         }
 
         // Crear mensaje
-        const message = new Message({
+        const newMessage = new Message({
           conversation_id: conversation._id,
           sender_id: customer_id,
           content,
           type: type || 'text'
         });
-        await message.save();
+        await newMessage.save();
 
         // Emitir a todos los agentes
         broadcastToAgents('new_customer_message', {
@@ -81,18 +101,23 @@ const setupWebSocket = (server) => {
             assigned_to: conversation.assigned_to
           },
           message: {
-            id: message._id,
-            conversation_id: message.conversation_id,
-            sender_id: message.sender_id,
-            content: message.content,
-            type: message.type,
-            created_at: message.created_at
+            id: newMessage._id,
+            conversation_id: newMessage.conversation_id,
+            sender_id: newMessage.sender_id,
+            content: newMessage.content,
+            type: newMessage.type,
+            created_at: newMessage.created_at
           }
         });
       } catch (error) {
-        console.error('Error processing customer message:', error);
+        console.error('Error processing message:', error);
       }
     });
+
+    // Unirse a sala personal basada en el rol del usuario
+    if (ws.user.role === 'agent') {
+      ws.room = 'agents';  // Asignamos la sala de agentes
+    }
 
     // Unirse a sala de conversación específica
     ws.on('join_conversation', (conversationId) => {
@@ -110,8 +135,22 @@ const setupWebSocket = (server) => {
 
     // Manejar desconexión
     ws.on('close', () => {
+      clearInterval(ws.pingInterval);
       console.log('Cliente desconectado:', ws._socket.remoteAddress);
     });
+  });
+
+  // Set up server-side heartbeat interval
+  const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (!ws.isAlive) return ws.terminate();
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  wss.on('close', () => {
+    clearInterval(interval);
   });
 };
 
