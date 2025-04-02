@@ -50,7 +50,6 @@ const setupWebSocket = (server) => {
 
         // Handle ping type messages
         if (message.type === 'ping') {
-          console.log('pong')
           ws.send(JSON.stringify({ type: 'pong' }));
           return;
         }
