@@ -16,10 +16,10 @@ const getConversationByThreadId = async threadId => {
     }
 };
 
-exports.createAndSendTicket = async (thredId, type, descrip) => {
+exports.createAndSendTicket = async (threadId, type, descrip) => {
     try {
 
-        const conv = await getConversationByThreadId(thredId);
+        const conv = await getConversationByThreadId(threadId);
 
         const newTicket = new Ticket({
             subject: type,

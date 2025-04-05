@@ -346,3 +346,5 @@ async function getMessengerProfile(userId) {
 }
 
 exports.sendMessengerMessage = sendMessenger;
+exports.generateUsername = generateUsername;
+exports.generateEasyPassword = generateEasyPassword;
