@@ -147,10 +147,13 @@ async function processSingleMessageBatch(messageBatch) {
       const combinedMessage = messagesContent.join('\n');
       const response = await sendMessage(combinedMessage, conversation.ai_thread_id);
 
+      conversation.source = 'messenger';
+
       if (response.newThread) {
         conversation.ai_thread_id = response.newThread;
-        await conversation.save();
       }
+
+      await conversation.save();
 
       const aiMessage = new Message({
         conversation_id: conversation._id,

@@ -45,6 +45,9 @@ const conversationSchema = new mongoose.Schema({
   ai_thread_id: {
     type: String
   },
+  source: {
+    type: String,
+  }
 });
 
 module.exports = mongoose.model('Conversation', conversationSchema);
