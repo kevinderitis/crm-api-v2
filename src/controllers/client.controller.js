@@ -3,6 +3,31 @@ const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const { broadcastToAll } = require("../websocket/socket");
 
+function formatConversation(conversation) {
+    return {
+        id: conversation._id,
+        customer_id: conversation.customer_id,
+        customer_name: conversation.customer_name,
+        last_message: conversation.last_message,
+        last_message_at: conversation.last_message_at,
+        unread_count: conversation.unread_count,
+        profile_picture: conversation.profile_picture,
+        tags: conversation.tags,
+        assigned_to: conversation.assigned_to
+    };
+}
+
+function formatMessage(message) {
+    return {
+        id: message._id,
+        conversation_id: message.conversation_id,
+        sender_id: message.sender_id,
+        content: message.content,
+        type: message.type,
+        created_at: message.created_at
+    };
+}
+
 exports.sendClientMessage = async (req, res) => {
     try {
         const { content } = req.body;
@@ -48,7 +73,7 @@ exports.sendClientMessage = async (req, res) => {
 
         await conversation.save();
 
-        broadcastToAll('new_customer_message', conversation, message);
+        broadcastToAll('new_customer_message', formatConversation(conversation), formatMessage(message));
 
         res.status(201).json(response);
     } catch (error) {
