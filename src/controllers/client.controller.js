@@ -73,7 +73,7 @@ exports.sendClientMessage = async (req, res) => {
 
         await conversation.save();
 
-        broadcastToAll('new_customer_message', formatConversation(conversation), formatMessage(message));
+        // broadcastToAll('new_customer_message', formatConversation(conversation), formatMessage(message));
 
         res.status(201).json(response);
     } catch (error) {
