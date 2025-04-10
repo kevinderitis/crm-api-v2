@@ -126,7 +126,11 @@ exports.sendMessage = async (req, res) => {
     conversation.last_message_at = new Date();
     await conversation.save();
 
-    await sendMessengerMessage(conversation.customer_id, content, conversation.fanpage_id);
+    if (conversation.source !== 'web') {
+      await sendMessengerMessage(conversation.customer_id, content, conversation.fanpage_id);
+    }
+
+    // await sendMessengerMessage(conversation.customer_id, content, conversation.fanpage_id);
 
     res.status(201).json(message);
   } catch (error) {
