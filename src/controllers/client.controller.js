@@ -1,6 +1,7 @@
 const { sendMessage } = require("./openai.controller");
 const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
+const { broadcastToAll } = require("../websocket/socket");
 
 exports.sendClientMessage = async (req, res) => {
     try {
@@ -46,6 +47,8 @@ exports.sendClientMessage = async (req, res) => {
         }
 
         await conversation.save();
+
+        broadcastToAll('new_customer_message', conversation, message);
 
         res.status(201).json(response);
     } catch (error) {
