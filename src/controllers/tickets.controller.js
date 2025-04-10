@@ -74,7 +74,7 @@ Ya tenés creada tu cuenta. Estas son tus credenciales de acceso:
     let message = "";
 
     if (ticket.status === "edited") {
-      message = `Tu retiro fue procesado con éxito. Aunque solicitaste $${ticket.amount}, se efectuó por $${ticket.real_amount}, que es el dinero disponible en tu cuenta para retirar.`;
+      message = `Tu retiro fue procesado con éxito. Aunque solicitaste $${ticket.amount}, se efectuó por un importe menor, que es el dinero disponible en tu cuenta para retirar.`;
     } else {
       message = `Tu retiro ya se encuentra en proceso. En breves debería estar llegandote el dinero. Cualquier cosa me avisas!`;
     }
