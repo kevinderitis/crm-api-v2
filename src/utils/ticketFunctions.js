@@ -21,12 +21,15 @@ exports.createAndSendTicket = async (threadId, type, descrip) => {
 
         const conv = await getConversationByThreadId(threadId);
 
+        const amount = type === 'Retiro' ? descrip : 0;
+
         const newTicket = new Ticket({
             subject: type,
             description: `${conv.customer_name} - ${descrip}`,
             conversation: conv._id,
             date: new Date(),
-            status: "open"
+            status: "open",
+            amount
         });
 
         await newTicket.save();

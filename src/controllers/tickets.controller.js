@@ -48,8 +48,9 @@ Ya tenés creada tu cuenta. Estas son tus credenciales de acceso:
 
 💰 ¡Te deseamos muchísima suerte! Que la fortuna esté de tu lado. 🍀🔥
 `;
-
-    await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+    if (conversation.source !== 'web') {
+      await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+    }
 
     const newMessage = new Message({
       conversation_id: conversation._id,
@@ -66,7 +67,35 @@ Ya tenés creada tu cuenta. Estas son tus credenciales de acceso:
     }
   },
   "Retiro": async (ticket, req) => {
-    console.log("Retiro en proceso.");
+
+    const conversation = await Conversation.findById(ticket.conversation);
+    if (!conversation) return;
+
+    let message = "";
+
+    if (ticket.status === "edited") {
+      message = `Tu retiro fue procesado con éxito. Aunque solicitaste $${ticket.amount}, se efectuó por $${ticket.real_amount}, que es el dinero disponible en tu cuenta para retirar.`;
+    } else {
+      message = `Tu retiro ya se encuentra en proceso. En breves debería estar llegandote el dinero. Cualquier cosa me avisas!`;
+    }
+
+    if (conversation.source !== 'web') {
+      await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+    }
+
+    const newMessage = new Message({
+      conversation_id: conversation._id,
+      sender_id: req.user.id,
+      content: message,
+      type: 'text'
+    });
+
+    await newMessage.save();
+
+    if (conversation.ai_thread_id) {
+      let msg = { event: 'withdrawal' };
+      await sendMessage(JSON.stringify(msg), conversation.ai_thread_id);
+    }
   }
 };
 
@@ -103,12 +132,13 @@ exports.completeTicket = async (req, res) => {
   try {
     const { id } = req.params;
     const ticket = await Ticket.findById(id);
+    const { real_amount } = req.body;
 
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket no encontrado' });
     }
 
-    ticket.status = 'completed';
+    ticket.status = real_amount === ticket.amount ? 'completed' : 'edited';
     await ticket.save();
 
     if (completeSubjectActions[ticket.subject]) {

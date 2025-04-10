@@ -15,7 +15,7 @@ const ticketSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['open', 'completed', 'cancelled'],
+    enum: ['open', 'completed', 'cancelled', 'edited'],
     default: 'open'
   },
   conversation: {
@@ -25,6 +25,10 @@ const ticketSchema = new mongoose.Schema({
   created_at: {
     type: Date,
     default: Date.now
+  },
+  amount: {
+    type: Number,
+    default: 0
   }
 });
 

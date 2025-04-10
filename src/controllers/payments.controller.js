@@ -51,12 +51,14 @@ exports.approvePayment = async (req, res) => {
   try {
     const { id } = req.params;
     const payment = await Payment.findById(id);
+    const { amount, bonus } = req.body;
 
     if (!payment) {
       return res.status(404).json({ message: 'Pago no encontrado' });
     }
 
     payment.status = 'approved';
+    payment.amount = amount;
     await payment.save();
 
     let conversation = await Conversation.findOne({ customer_name: payment.customerName });
@@ -65,7 +67,9 @@ exports.approvePayment = async (req, res) => {
       const message = `Ya tenés cargadas tus fichas! Cualquier cosa me avisas`;
       let openAIMessage = { event: 'coinsadded' };
 
-      await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+      if (conversation.source !== 'web') {
+        await sendMessengerMessage(conversation.customer_id, message, conversation.fanpage_id);
+      }
 
       const newMessage = new Message({
         conversation_id: conversation._id,
@@ -81,6 +85,8 @@ exports.approvePayment = async (req, res) => {
         await sendMessage(JSON.stringify(openAIMessage), conversation.ai_thread_id);
       }
 
+      conversation.last_bonus = bonus;
+      await conversation.save();
     }
 
     res.json(payment);

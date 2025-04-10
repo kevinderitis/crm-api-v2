@@ -47,6 +47,9 @@ const conversationSchema = new mongoose.Schema({
   },
   source: {
     type: String,
+  },
+  last_bonus: {
+    type: Number
   }
 });
 
