@@ -12,4 +12,6 @@ module.exports = {
   FACEBOOK_ACCESS_TOKEN: process.env.FACEBOOK_ACCESS_TOKEN,
   OPEN_AI_API_KEY: process.env.OPEN_AI_API_KEY,
   ASSISTANT_ID: process.env.ASSISTANT_ID,
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
 };

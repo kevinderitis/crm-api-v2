@@ -16,6 +16,7 @@
     "mongoose": "^7.6.3",
     "openai": "^4.89.0",
     "socket.io": "^4.7.2",
+    "web-push": "^3.6.7",
     "ws": "^8.18.1"
   },
   "keywords": [],

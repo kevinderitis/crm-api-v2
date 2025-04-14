@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const connectDB = require('./config/db');
-const { setupWebSocket, broadcastToAll, broadcastPaymentsToAll, broadcastTicketsToAll } = require('./websocket/socket');
+const { setupWebSocket } = require('./websocket/socket');
 const config = require('./config/config');
 
 // Importar rutas
@@ -14,6 +14,7 @@ const metaRoutes = require('./routes/meta.routes');
 const paymentsRoutes = require('./routes/payments.routes');
 const ticketsRoutes = require('./routes/tickets.routes');
 const clientRoutes  = require('./routes/client.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 // Crear app Express
 const app = express();
@@ -46,40 +47,13 @@ app.use('/api/meta', metaRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Crear servidor HTTP
 const server = http.createServer(app);
 
 // Configurar WebSocket
 setupWebSocket(server);
-
-// Ruta POST para emitir el mensaje
-app.post('/broadcast', (req, res) => {
-    const { type, conversation, message, payment, ticket } = req.body;
-
-    if (!type) {
-        return res.status(400).json({ error: 'Faltan datos en el body' });
-    }
-
-    if(type === 'new_payment') {
-        broadcastPaymentsToAll(type, payment);
-        return res.status(200).json({ success: true, message: 'Mensaje de pago enviado a todos los clientes' });
-    }
-
-    if(type === 'new_ticket') {
-        broadcastTicketsToAll(type, ticket);
-        return res.status(200).json({ success: true, message: 'Ticket enviado a todos los clientes' });
-    }
-
-
-    try {
-        broadcastToAll(type, conversation, message);
-        res.status(200).json({ success: true, message: 'Mensaje enviado a todos los clientes' });
-    } catch (error) {
-        console.error('Error al emitir mensaje:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
 
 const PORT = config.PORT || 3000;
 
