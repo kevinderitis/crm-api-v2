@@ -21,7 +21,7 @@ exports.createAndSendTicket = async (threadId, type, descrip) => {
 
         const conv = await getConversationByThreadId(threadId);
 
-        const amount = type === 'Retiro' ? descrip : 0;
+        const amount = type === 'Retiro' ? parseInt(descrip.split(" - ")[0]) : 0;
 
         const newTicket = new Ticket({
             subject: type,
