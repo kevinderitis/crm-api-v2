@@ -21,7 +21,7 @@ const functions = {
     },
     retirarDinero: async (params, threadId) => {
         console.log("✅ Retirando dinero con:", params);
-        await createAndSendTicket(threadId, 'Retiro', params.monto);
+        await createAndSendTicket(threadId, 'Retiro', `${params.monto} - ${params.cbu} - ${params.nombre}`);
         return {
             success: true,
             status: "pending"
