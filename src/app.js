@@ -13,8 +13,9 @@ const tagsRoutes = require('./routes/tags.routes');
 const metaRoutes = require('./routes/meta.routes');
 const paymentsRoutes = require('./routes/payments.routes');
 const ticketsRoutes = require('./routes/tickets.routes');
-const clientRoutes  = require('./routes/client.routes');
+const clientRoutes = require('./routes/client.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const reportsRoutes = require('./routes/reports.routes');
 
 // Crear app Express
 const app = express();
@@ -48,6 +49,8 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportsRoutes);
+
 
 // Crear servidor HTTP
 const server = http.createServer(app);

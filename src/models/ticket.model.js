@@ -29,7 +29,15 @@ const ticketSchema = new mongoose.Schema({
   amount: {
     type: Number,
     default: 0
-  }
+  },
+  real_amount: {
+    type: Number,
+    default: 0
+  },
+  completed_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
 });
 
 module.exports = mongoose.model('Ticket', ticketSchema);
