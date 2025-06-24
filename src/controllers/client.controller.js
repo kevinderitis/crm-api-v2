@@ -32,6 +32,8 @@ exports.sendClientMessage = async (req, res) => {
     try {
         const { user_id, message } = req.body;
         
+        console.log("Received message from client:", { user_id, message });
+        
         if (!user_id) {
             return res.status(401).json({ message: 'Not authenticated - user_id' });
         }
