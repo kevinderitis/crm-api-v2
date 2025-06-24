@@ -93,8 +93,8 @@ exports.sendClientMessage = async (req, res) => {
         await conversation.save();
 
         // broadcastToAll('new_customer_message', formatConversation(conversation), formatMessage(message));
-
-        res.status(201).json(response);
+        console.log(response);
+        res.status(200).json(response);
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Error enviando mensaje' });
