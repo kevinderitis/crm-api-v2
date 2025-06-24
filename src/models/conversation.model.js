@@ -6,8 +6,7 @@ const conversationSchema = new mongoose.Schema({
     required: true
   },
   customer_name: {
-    type: String,
-    required: true
+    type: String
   },
   customer_password: {
     type: String

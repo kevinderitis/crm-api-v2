@@ -28,17 +28,29 @@ function formatMessage(message) {
     };
 }
 
+// Funciones auxiliares
+async function newConversation(userId) {
+    const newConversation = new Conversation({
+        customer_id: userId,
+        fanpage_id: 'landing',
+        last_message: '',
+        last_message_at: new Date(),
+        unread_count: 0
+    });
+    return newConversation.save();
+}
+
 exports.sendClientMessage = async (req, res) => {
     try {
         const { user_id, message } = req.body;
-        
+
         console.log("Received message from client:", { user_id, message });
-        
+
         if (!user_id) {
             return res.status(401).json({ message: 'Not authenticated - user_id' });
         }
 
-        const conversation = await Conversation.findOne({ customer_name: user_id });
+        const conversation = await Conversation.findOne({ customer_id: user_id }) || await newConversation(user_id);
 
         if (!conversation) {
             return res.status(404).json({ message: 'Conversación no encontrada' });
