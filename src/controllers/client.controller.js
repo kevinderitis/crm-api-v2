@@ -47,7 +47,7 @@ exports.sendClientMessage = async (req, res) => {
         console.log("Received message from client:", { user_id, message });
 
         if (!user_id) {
-            return res.status(401).json({ message: 'Not authenticated - user_id' });
+            return res.status(200).json({ message: 'Bienvenido a Luxor Club, para poder chatear con un agente y comenzar a jugar debes ingresar en la plataforma. Presiona ingresar o registrate. Exitos.' });
         }
 
         const conversation = await Conversation.findOne({ customer_id: user_id }) || await newConversation(user_id);
