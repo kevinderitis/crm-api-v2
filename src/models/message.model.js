@@ -14,6 +14,9 @@ const messageSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  mime_type: {
+    type: String
+  },
   type: {
     type: String,
     enum: ['text', 'image'],

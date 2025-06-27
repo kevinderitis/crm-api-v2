@@ -32,6 +32,7 @@ function formatMessage(message) {
 async function newConversation(userId) {
     const newConversation = new Conversation({
         customer_id: userId,
+        customer_name: 'user ' + userId,
         fanpage_id: 'landing',
         last_message: '',
         last_message_at: new Date(),
@@ -124,6 +125,7 @@ exports.sendClientImage = async (req, res) => {
             conversation_id: conversation._id,
             sender_id: conversation.customer_id,
             content: file.buffer.toString('base64'),
+            mime_type: file.mimetype,
             type: 'image',
             created_at: new Date()
         });
