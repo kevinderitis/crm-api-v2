@@ -1,7 +1,8 @@
 const { sendMessage } = require("./openai.controller");
 const Conversation = require("../models/conversation.model");
+const Payment = require("../models/payment.model");
 const Message = require("../models/message.model");
-const { broadcastToAll } = require("../websocket/socket");
+const { broadcastToAll, broadcastPaymentsToAll } = require("../websocket/socket");
 
 function formatConversation(conversation) {
     return {
@@ -136,6 +137,15 @@ exports.sendClientImage = async (req, res) => {
         conversation.last_message_at = new Date();
         conversation.source = 'web';
         await conversation.save();
+
+        const newPayment = new Payment({
+            customerName: conversation.customer_name,
+            date: new Date(),
+            image: file.buffer.toString('base64'),
+            status: 'pending'
+        });
+        await newPayment.save();
+        broadcastPaymentsToAll("new_payment", newPayment);
 
         res.status(200).json({ message: 'Imagen recibida correctamente' });
 
