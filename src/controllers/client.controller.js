@@ -40,6 +40,8 @@ async function newConversation(userId) {
     return newConversation.save();
 }
 
+
+
 exports.sendClientMessage = async (req, res) => {
     try {
         const { user_id, message } = req.body;
@@ -100,6 +102,44 @@ exports.sendClientMessage = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Error enviando mensaje' });
+    }
+};
+
+exports.sendClientImage = async (req, res) => {
+    try {
+        const { user_id } = req.body;
+        const file = req.file;
+
+        if (!user_id || !file) {
+            return res.status(400).json({ message: 'Faltan datos (imagen o usuario)' });
+        }
+
+        const conversation = await Conversation.findOne({ customer_id: user_id }) || await newConversation(user_id);
+
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversación no encontrada' });
+        }
+
+        const newMessage = new Message({
+            conversation_id: conversation._id,
+            sender_id: conversation.customer_id,
+            content: file.buffer.toString('base64'),
+            type: 'image',
+            created_at: new Date()
+        });
+
+        await newMessage.save();
+
+        conversation.last_message = '[imagen]';
+        conversation.last_message_at = new Date();
+        conversation.source = 'web';
+        await conversation.save();
+
+        res.status(200).json({ message: 'Imagen recibida correctamente' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al procesar la imagen' });
     }
 };
 

@@ -63,5 +63,8 @@ const PORT = config.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+require('./jobs/cleanExpiredImages');
+
 // Exportar para usar en tests
 module.exports = { app, server };
