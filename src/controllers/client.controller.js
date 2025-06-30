@@ -155,6 +155,36 @@ exports.sendClientImage = async (req, res) => {
     }
 };
 
+exports.getClientMessages = async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        return res.status(400).json({ error: "Missing userId parameter" });
+    }
+
+    console.log(`[GET] Fetching last 10 messages for user: ${userId}`);
+
+    try {
+        const conversation = await Conversation.findOne({ customer_id: userId }).lean();
+
+        if (!conversation) {
+            console.warn(`No conversation found for user: ${userId}`);
+            return res.status(404).json({ error: "Conversation not found" });
+        }
+
+        const messages = await Message.find({ conversation_id: conversation._id })
+            .sort({ created_at: -1 })
+            .limit(10)
+            .lean();
+
+        return res.json({ messages });
+
+    } catch (error) {
+        console.error(`Error fetching messages for user ${userId}:`, error);
+        return res.status(500).json({ error: "Server error while fetching messages" });
+    }
+};
+
 // exports.sendClientMessage = async (req, res) => {
 //     try {
 //         const { content } = req.body;

@@ -15,6 +15,7 @@ const upload = multer({
 // router.use(verifyToken);
 
 // Rutas de clientes
+router.get('/message/:userId', clientController.getClientMessages);
 router.post('/message', clientController.sendClientMessage);
 router.post('/message/image', upload.single('image'), clientController.sendClientImage);
 
