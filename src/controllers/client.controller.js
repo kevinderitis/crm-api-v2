@@ -173,9 +173,11 @@ exports.getClientMessages = async (req, res) => {
         }
 
         const messages = await Message.find({ conversation_id: conversation._id })
-            .sort({ created_at: -1 })
+            .sort({ created_at: -1 }) // más recientes primero
             .limit(10)
             .lean();
+
+        messages.reverse();
 
         return res.json({ messages });
 
