@@ -172,23 +172,13 @@ exports.getClientMessages = async (req, res) => {
             return res.status(404).json({ error: "Conversation not found" });
         }
 
-        const now = Date.now();
-        const gracePeriod = 35000;
-        const cutoffTime = new Date(now - gracePeriod);
-
-        const messages = await Message.find({
-            conversation_id: conversation._id,
-            created_at: { $lt: cutoffTime }
-        })
-            .sort({ created_at: 1 })
+        const messages = await Message.find({ conversation_id: conversation._id })
+            .sort({ created_at: -1 })
             .limit(10)
             .lean();
 
         messages.reverse();
 
-        console.log(`Fetched ${messages.length} messages for user: ${userId}`);
-        console.log(messages);
-        
         return res.json({ messages });
 
     } catch (error) {
