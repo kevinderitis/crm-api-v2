@@ -186,6 +186,9 @@ exports.getClientMessages = async (req, res) => {
 
         messages.reverse();
 
+        console.log(`Fetched ${messages.length} messages for user: ${userId}`);
+        console.log(messages);
+        
         return res.json({ messages });
 
     } catch (error) {
