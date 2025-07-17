@@ -113,8 +113,10 @@ exports.sendClientImage = async (req, res) => {
         const file = req.file;
 
         console.log("Received image from client:", { user_id, file });
-        
-        if (!user_id || !file) {
+
+        const isInvalidUserId = user_id == null || user_id === '' || user_id === 'null';
+
+        if (isInvalidUserId || !file) {
             return res.status(400).json({ message: 'Faltan datos (imagen o usuario)' });
         }
 
