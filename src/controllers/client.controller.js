@@ -51,7 +51,7 @@ exports.sendClientMessage = async (req, res) => {
         console.log("Received message from client:", { user_id, message });
 
         if (!user_id) {
-            return res.status(200).json({ message: 'Bienvenid@ a Luxor Club! para poder chatear con un agente y comenzar a jugar debes ingresar con tu usuario o registrarte.' });
+            return res.status(200).json({ message: 'Bienvenid@ a Luxor Club! para poder chatear con un agente, obtener tu bono y comenzar a jugar debes ingresar con tu usuario o registrarte. Para realizar el registro debes presionar el boton de "Registrarse" que se encuentra arriba y seguir los pasos, una vez que ya tengas tu usuario podes volver a hablar por el chat de soporte.' });
         }
 
         const conversation = await Conversation.findOne({ customer_id: user_id }) || await newConversation(user_id);
@@ -112,6 +112,8 @@ exports.sendClientImage = async (req, res) => {
         const { user_id } = req.body;
         const file = req.file;
 
+        console.log("Received image from client:", { user_id, file });
+        
         if (!user_id || !file) {
             return res.status(400).json({ message: 'Faltan datos (imagen o usuario)' });
         }
@@ -147,7 +149,7 @@ exports.sendClientImage = async (req, res) => {
         await newPayment.save();
         broadcastPaymentsToAll("new_payment", newPayment);
 
-        res.status(200).json({ message: 'Imagen recibida correctamente' });
+        res.status(200).json({ message: 'Recibimos el comprobante, apenas ingrese la transferencia se te van a estar cargando las fichas. Te avisamos' });
 
     } catch (error) {
         console.error(error);
