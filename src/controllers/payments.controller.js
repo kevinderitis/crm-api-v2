@@ -106,11 +106,10 @@ exports.rejectPayment = async (req, res) => {
       return res.status(404).json({ message: 'Pago no encontrado' });
     }
 
-    console.log(reason)
     if (reason === 'Comprobante inválido') {
-      payment.status = 'pending';
-    } else {
       payment.status = 'rejected';
+    } else {
+      payment.status = 'pending';
     }
 
     await payment.save();
