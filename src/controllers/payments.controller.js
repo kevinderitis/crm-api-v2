@@ -98,17 +98,25 @@ exports.approvePayment = async (req, res) => {
 exports.rejectPayment = async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body;
+
     const payment = await Payment.findById(id);
 
     if (!payment) {
       return res.status(404).json({ message: 'Pago no encontrado' });
     }
 
-    payment.status = 'rejected';
+    if (reason === 'Comprobante inválido') {
+      payment.status = 'pending';
+    } else {
+      payment.status = 'rejected';
+    }
+
     await payment.save();
 
     res.json(payment);
   } catch (error) {
+    console.error('Error rechazando pago:', error);
     res.status(500).json({ message: 'Error rechazando pago' });
   }
 };
