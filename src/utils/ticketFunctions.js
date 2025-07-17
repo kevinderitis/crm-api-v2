@@ -25,7 +25,7 @@ exports.createAndSendTicket = async (threadId, type, descrip) => {
 
         const newTicket = new Ticket({
             subject: type,
-            description: `${conv.customer_name}: ${descrip}`,
+            description: `${conv.customer_name}: ${descrip} - Último bono: ${conv.last_bonus != null ? conv.last_bonus : 0}`,
             conversation: conv._id,
             date: new Date(),
             status: "open",
