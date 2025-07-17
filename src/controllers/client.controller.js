@@ -111,9 +111,6 @@ exports.sendClientImage = async (req, res) => {
     try {
         const { user_id } = req.body;
         const file = req.file;
-
-        console.log("Received image from client:", { user_id, file });
-
         const isInvalidUserId = user_id == null || user_id === '' || user_id === 'null';
 
         if (isInvalidUserId || !file) {
